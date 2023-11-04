@@ -7,6 +7,17 @@ import os
 
 
 
+suffixes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB']
+def humansize(nbytes):
+    i = 0
+    while nbytes >= 1024 and i < len(suffixes)-1:
+        nbytes /= 1024.
+        i += 1
+    f = ('%.2f' % nbytes).rstrip('0').rstrip('.')
+    return '%s %s' % (f, suffixes[i])
+
+
+
 def validate_iso_path(path):
     if not Path(path).suffix == '.iso':
         raise serializers.ValidationError("Provided file is not an iso.")
@@ -48,11 +59,19 @@ class StatusChoiceField(serializers.ChoiceField):
 
 
 
+class CustomCharField(serializers.CharField):
+    def to_representation(self, value):
+        """
+        Serialize the value's class name.
+        """  
+        return humansize(int(value) * 1024)
+
+
 class VmReadSerializer(serializers.Serializer):
     uuid = serializers.UUIDField()
     name = serializers.CharField(max_length=100)
-    ram = serializers.IntegerField(min_value=1)
-    cpu = serializers.IntegerField(min_value=1)
+    ram = CustomCharField()
+    cpu = serializers.IntegerField()
     state = StatusChoiceField(choices=CHOICES)
 
 
@@ -70,12 +89,12 @@ class VmCreateSerializer(serializers.Serializer):
     def save(self, **kwargs):
         libvirt_client = kwargs.get("libvirt_client", None)
         name = self.validated_data["name"]
-        ram = self.validated_data["ram"]
-        storage = self.validated_data["storage"]
+        ram = self.validated_data["ram"] * 1024 * 1024 * 1024
+        storage = self.validated_data["storage"] 
         cpu = self.validated_data["cpu"]
         iso_path = self.validated_data["iso_path"]
         
-        create_new_img_cmd = f"qemu-img create -f qcow2 /home/{getpass.getuser()}/Desktop/{name}.qcow2 {storage}G "
+        create_new_img_cmd = f"qemu-img create -f qcow2 /home/{getpass.getuser()}/Desktop/vms-pool/{name}.qcow2 {storage}G "
         os.system(create_new_img_cmd)
 
         
@@ -84,7 +103,7 @@ class VmCreateSerializer(serializers.Serializer):
         xml_config = f'''
             <domain type="kvm">
                 <name>{name}</name>
-                <memory unit="GB">{ram}</memory>
+                <memory unit="bytes">{ram}</memory>
                 <vcpu placement="static">{cpu}</vcpu>
                 
                 <os>
@@ -100,7 +119,7 @@ class VmCreateSerializer(serializers.Serializer):
                 
                      <disk type='file' device='disk' >
                             <driver name='qemu' type='qcow2'/>
-                            <source file='{f"/home/{getpass.getuser()}/Desktop/{name}.qcow2"}'/>
+                            <source file='{f"/home/{getpass.getuser()}/Desktop/vms-pool/{name}.qcow2"}'/>
                             <target dev='vda' bus='virtio'/>
                             <address type='pci' domain='0x0000' bus='0x00' slot='0x04' function='0x0'/>
                             <boot order="1"/>

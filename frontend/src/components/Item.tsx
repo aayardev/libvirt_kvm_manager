@@ -121,7 +121,7 @@ const Item = ({
       <div className="text-l  font-bold tracking-tight text-gray-900 dark:text-white">
         <span className="mr-1">Ram : </span>
         <span className="font-normal text-gray-700 dark:text-gray-400">
-          <span>{item.ram} GB</span>
+          <span>{item.ram}</span>
         </span>
       </div>
       <div className="text-l  font-bold tracking-tight text-gray-900 dark:text-white">

@@ -4,7 +4,7 @@ const Nav = () => {
   return (
     <Navbar fluid rounded>
       {/* <DarkThemeToggle /> */}
-      <Navbar.Brand href="/navbars" className="mx-auto">
+      <Navbar.Brand href="/" className="mx-auto">
         <span className="self-start whitespace-nowrap text-xl font-semibold dark:text-white">
           Libvirt Manager
         </span>

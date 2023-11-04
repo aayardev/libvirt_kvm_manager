@@ -1,5 +1,6 @@
 import { ConflictError, UnauthorizedError } from "../errors/http_errors";
 import { Item } from "../models/item";
+import { capitalize } from "../utils";
 
 export interface ItemInput {
   name: string;
@@ -23,9 +24,22 @@ async function fetchData(input: RequestInfo, init?: RequestInit) {
     return response;
   } else {
     const errorBody = await response.json();
-    const errorMessage = Object.values(errorBody).join(
-      Object.keys(errorBody).length > 1 ? ", " : " "
-    );
+
+    // const errorMessage = Object.values(errorBody).join(
+    //   Object.keys(errorBody).length > 1 ? ", " : " "
+    // );
+
+    const errorMessage =
+      "message" in errorBody
+        ? Object.values(errorBody).join(
+            Object.keys(errorBody).length > 1 ? ", " : " "
+          )
+        : Object.keys(errorBody)
+            .map((key) => {
+              console.log(key, errorBody, errorBody[key]);
+              return `${capitalize(key)} : ${errorBody[key].join(", ")}`;
+            })
+            .join(Object.keys(errorBody).length > 1 ? ", " : " ");
     if (response.status === 401) {
       throw new UnauthorizedError(errorMessage);
     } else if (response.status === 409) {

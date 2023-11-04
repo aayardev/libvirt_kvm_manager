@@ -1,4 +1,6 @@
 import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import TextInputField from "./form/TextInputField";
 import { ItemInput } from "../network/items_api";
@@ -6,6 +8,21 @@ import { Item } from "../models/item";
 import * as ItemsApi from "../network/items_api";
 
 import { toast } from "react-toastify";
+
+const validationSchema = z.object({
+  name: z.string().nonempty("This field is required").max(100),
+  ram: z
+    .number({
+      required_error: "Age is required",
+    })
+    .min(1)
+    .max(4),
+  cpu: z.number().min(1).max(4),
+  storage: z.number().min(10).max(20),
+  iso_path: z.string().nonempty("This field is required"),
+});
+
+type TValidationSchema = z.infer<typeof validationSchema>;
 
 interface AddEditNoteDialogProps {
   showModal: boolean;
@@ -21,16 +38,16 @@ const AddEditItemDialog = ({
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<ItemInput>({
+  } = useForm<TValidationSchema>({
     defaultValues: {
-      name: "",
       ram: 2,
       cpu: 2,
-      iso_path: "",
       storage: 20,
     },
+    resolver: zodResolver(validationSchema),
   });
   async function onSubmit(input: ItemInput) {
+    console.log("submitting...");
     try {
       let itemResponse: Item;
 
@@ -40,8 +57,11 @@ const AddEditItemDialog = ({
       onDismiss();
     } catch (error) {
       toast.error((error as Error).message);
+      console.log(error);
     }
   }
+
+  console.log(errors, "errors");
   return (
     <>
       {showModal ? (
@@ -95,7 +115,10 @@ const AddEditItemDialog = ({
                         type="number"
                         placeholder="Ram"
                         register={register}
-                        registerOptions={{ required: "Required" }}
+                        registerOptions={{
+                          required: "Required",
+                          valueAsNumber: true,
+                        }}
                         error={errors.ram}
                       />
                       <TextInputField
@@ -104,16 +127,22 @@ const AddEditItemDialog = ({
                         type="number"
                         placeholder="Cpu"
                         register={register}
-                        registerOptions={{ required: "Required" }}
+                        registerOptions={{
+                          required: "Required",
+                          valueAsNumber: true,
+                        }}
                         error={errors.cpu}
                       />
                       <TextInputField
                         name="storage"
                         label="Storage on GB"
-                        type="text"
+                        type="number"
                         placeholder="20"
                         register={register}
-                        registerOptions={{ required: "Required" }}
+                        registerOptions={{
+                          required: "Required",
+                          valueAsNumber: true,
+                        }}
                         error={errors.storage}
                       />
                       <TextInputField

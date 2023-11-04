@@ -25,7 +25,7 @@ class LibvirtWrapper:
     #     state, _ = domain.state()
         
     #     if state == libvirt.VIR_DOMAIN_RUNNING:
-    #         domain.shutdown()
+    #         domain.destroyFlags(libvirt.VIR_DOMAIN_DESTROY_GRACEFUL)
     #     else:
     #         return
         
@@ -147,10 +147,9 @@ class LibvirtWrapper:
     def get_vm_detail(self, uuid):
         domain = self.conn.lookupByUUID(uuid)
         parsed_xml = untangle.parse(domain.XMLDesc())
-        # id = int(parsed_xml.domain["id"])
         name = parsed_xml.domain.name.cdata
         uuid = parsed_xml.domain.uuid.cdata
-        ram = int(parsed_xml.domain.memory.cdata) // 1e+6
+        ram = int(parsed_xml.domain.memory.cdata) 
         cpu = int(parsed_xml.domain.vcpu.cdata)
         state = domain.state()[0]
         
